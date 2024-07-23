@@ -25,10 +25,10 @@ class _MapPage extends State<MapPage> {
   BitmapDescriptor markerIcon = BitmapDescriptor.defaultMarker;
 
   late List<DocumentSnapshot> documentList =
-  List<DocumentSnapshot>.empty(growable: true);
+      List<DocumentSnapshot>.empty(growable: true);
 
   static const CameraPosition _googleMapCamera =
-  CameraPosition(target: LatLng(37.571320, 127.029403), zoom: 15);
+      CameraPosition(target: LatLng(37.571320, 127.029403), zoom: 15);
 
   @override
   void initState() {
@@ -38,9 +38,9 @@ class _MapPage extends State<MapPage> {
 
   void addCustomIcon() {
     BitmapDescriptor.fromAssetImage(
-        const ImageConfiguration(), "lib/res/images/apartment.png")
+            const ImageConfiguration(), "lib/res/images/apartment.png")
         .then(
-          (icon) {
+      (icon) {
         setState(() {
           markerIcon = icon;
         });
@@ -265,17 +265,37 @@ class _MapPage extends State<MapPage> {
       ),
       body: currentItem == 0
           ? GoogleMap(
-        initialCameraPosition: _googleMapCamera,
-        mapType: MapType.normal,
-        onMapCreated: (GoogleMapController controller) {
-          _controller.complete(controller);
-        },
-        markers: Set<Marker>.of(markers.values),
-      )
-          : ListView(),
+              initialCameraPosition: _googleMapCamera,
+              mapType: MapType.normal,
+              onMapCreated: (GoogleMapController controller) {
+                _controller.complete(controller);
+              },
+              markers: Set<Marker>.of(markers.values),
+            )
+          : ListView.builder(
+              itemBuilder: (context, value) {
+                Map<String, dynamic> item =
+                    documentList[value].data() as Map<String, dynamic>;
+                return InkWell(
+                  child: Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.apartment),
+                      title: Text(item['name']),
+                      subtitle: Text(item['address']),
+                      trailing: const Icon(Icons.arrow_circle_right_sharp),
+                    ),
+                  ),
+                  onTap: () {},
+                );
+              },
+              itemCount: documentList.length,
+            ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentItem,
         onTap: (value) {
+          if (value == 0) {
+            _controller = Completer<GoogleMapController>();
+          }
           setState(() {
             currentItem = value;
           });
