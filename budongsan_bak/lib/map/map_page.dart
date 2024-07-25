@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:budongsan/geoFire/geoflutterfire.dart';
 import 'package:budongsan/geoFire/models/point.dart';
+import 'apt_page.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -142,7 +143,13 @@ class _MapPage extends State<MapPage> {
             infoWindow: InfoWindow(
                 title: info['name'],
                 snippet: '${info['address']}',
-                onTap: () {}),
+                onTap: () {
+                  Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (context) {
+                    return AptPage(
+                        aptHash: info['position']['geohash'], aptInfo: info);
+                  }));
+                }),
             position: position,
             icon: markerIcon,
             alpha: 1.0,
@@ -223,7 +230,7 @@ class _MapPage extends State<MapPage> {
                   mapFilter = res as MapFilter;
                 }
               },
-              icon: Icon(Icons.search))
+              icon: const Icon(Icons.search))
         ],
       ),
       drawer: Drawer(
@@ -285,7 +292,13 @@ class _MapPage extends State<MapPage> {
                       trailing: const Icon(Icons.arrow_circle_right_sharp),
                     ),
                   ),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (context) {
+                      return AptPage(
+                          aptHash: item['position']['geohash'], aptInfo: item);
+                    }));
+                  },
                 );
               },
               itemCount: documentList.length,
