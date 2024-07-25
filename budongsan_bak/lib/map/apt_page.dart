@@ -36,7 +36,18 @@ class _AptPage extends State<AptPage> {
     Size screenSize = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
-        actions: [IconButton(onPressed: () {}, icon: favoriteIcon)],
+        actions: [
+          IconButton(
+              onPressed: () {
+                FirebaseFirestore.instance
+                    .collection('rollcake')
+                    .doc('favorite')
+                    .set(widget.aptInfo);
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(SnackBar(content: Text('즐겨찾기로 등록했습니다.')));
+              },
+              icon: favoriteIcon)
+        ],
         title: Text(widget.aptInfo['name']),
       ),
       body: Column(

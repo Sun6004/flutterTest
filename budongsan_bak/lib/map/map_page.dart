@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:budongsan/geoFire/geoflutterfire.dart';
 import 'package:budongsan/geoFire/models/point.dart';
 import 'apt_page.dart';
+import 'package:budongsan/favorite/favorite_page.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -260,8 +261,13 @@ class _MapPage extends State<MapPage> {
               ),
             ),
             ListTile(
-              title: const Text('Selected Apartment'),
-              onTap: () {},
+              title: const Text('My favorite Apartment'),
+              onTap: () {
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (context) {
+                  return const MyFavoritePage();
+                }));
+              },
             ),
             ListTile(
               title: const Text('setting'),

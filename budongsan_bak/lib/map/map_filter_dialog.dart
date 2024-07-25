@@ -29,26 +29,26 @@ class _MapFilterDialog extends State<MapFilterDialog> {
 
   final List<DropdownMenuItem<String>> _peopleDropDownMenuItems = [
     const DropdownMenuItem<String>(
-      child: Text('all'),
       value: '0',
+      child: Text('all'),
     ),
     const DropdownMenuItem<String>(
-      child: Text('100세대 이상'),
       value: '100',
+      child: Text('100세대 이상'),
     ),
     const DropdownMenuItem<String>(
-      child: Text('300세대 이상'),
       value: '300',
+      child: Text('300세대 이상'),
     ),
     const DropdownMenuItem<String>(
-      child: Text('500세대 이상'),
       value: '500',
+      child: Text('500세대 이상'),
     ),
   ];
 
   final List<DropdownMenuItem<String>> _carDownMenuItems = [
-    const DropdownMenuItem(child: Text('세대별 1대 미만'), value: '1'),
-    const DropdownMenuItem(child: Text('세대별 1대 이상'), value: '2'),
+    const DropdownMenuItem(value: '1', child: Text('세대별 1대 미만')),
+    const DropdownMenuItem(value: '2', child: Text('세대별 1대 이상')),
   ];
 
   @override
@@ -63,7 +63,7 @@ class _MapFilterDialog extends State<MapFilterDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('My budongsan'),
+      title: const Text('My budongsan'),
       content: SizedBox(
         height: 300,
         child: Column(
@@ -86,7 +86,7 @@ class _MapFilterDialog extends State<MapFilterDialog> {
                 items: _peopleDropDownMenuItems,
                 onChanged: (value) {
                   setState(() {
-                    mapFilter.peopleStr!;
+                    mapFilter.peopleStr;
                   });
                 },
                 value: mapFilter.peopleStr,
@@ -98,7 +98,7 @@ class _MapFilterDialog extends State<MapFilterDialog> {
                 items: _carDownMenuItems,
                 onChanged: (value) {
                   setState(() {
-                    mapFilter.carStr!;
+                    mapFilter.carStr;
                   });
                 },
                 value: mapFilter.carStr,
@@ -111,12 +111,12 @@ class _MapFilterDialog extends State<MapFilterDialog> {
                     onPressed: () {
                       Navigator.of(context).pop(mapFilter);
                     },
-                    child: Text('확인')),
+                    child: const Text('확인')),
                 ElevatedButton(
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: Text('취소')),
+                    child: const Text('취소')),
               ],
             )
           ],
