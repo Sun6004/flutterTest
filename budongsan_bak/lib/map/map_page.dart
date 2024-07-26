@@ -8,6 +8,8 @@ import 'package:budongsan/geoFire/geoflutterfire.dart';
 import 'package:budongsan/geoFire/models/point.dart';
 import 'apt_page.dart';
 import 'package:budongsan/favorite/favorite_page.dart';
+import '../setting/setting_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -17,6 +19,7 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPage extends State<MapPage> {
+  MapType mapType = MapType.normal;
   int currentItem = 0;
   MapFilter mapFilter = MapFilter();
   Completer<GoogleMapController> _controller = Completer<GoogleMapController>();
@@ -271,7 +274,29 @@ class _MapPage extends State<MapPage> {
             ),
             ListTile(
               title: const Text('setting'),
-              onTap: () {},
+              onTap: () async {
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (context) {
+                  return SettingPage();
+                })).then((value) async {
+                  final SharedPreferences prefs =
+                      await SharedPreferences.getInstance();
+                  final int? type = prefs.getInt('mapType');
+                  setState(() {
+                    switch (type) {
+                      case 0:
+                        mapType = MapType.terrain;
+                        break;
+                      case 1:
+                        mapType = MapType.satellite;
+                        break;
+                      case 2:
+                        mapType = MapType.hybrid;
+                        break;
+                    }
+                  });
+                });
+              },
             ),
           ],
         ),
@@ -279,7 +304,7 @@ class _MapPage extends State<MapPage> {
       body: currentItem == 0
           ? GoogleMap(
               initialCameraPosition: _googleMapCamera,
-              mapType: MapType.normal,
+              mapType: mapType,
               onMapCreated: (GoogleMapController controller) {
                 _controller.complete(controller);
               },
