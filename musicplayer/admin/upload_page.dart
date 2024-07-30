@@ -124,16 +124,67 @@ class _UploadPageState extends State<UploadPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(width: 150, child: TextField(decoration: InputDecoration(hintText: '작곡가'), controller: _composerController,),),
+            SizedBox(
+              width: 150,
+              child: TextField(
+                decoration: InputDecoration(hintText: '작곡가'),
+                controller: _composerController,
+              ),
+            ),
             SizedBox(height: 16),
-            SizedBox(width: 250, child: TextField(decoration: InputDecoration(hintText: 'TAG(쉼표로 구분)'), controller: _tagController),),
+            SizedBox(
+              width: 250,
+              child: TextField(
+                  decoration: InputDecoration(hintText: 'TAG(쉼표로 구분)'),
+                  controller: _tagController),
+            ),
             SizedBox(height: 16),
-            DropdownButton<String>(items: items, onChanged: onChanged),
-            SizedBox(width: 150, child: TextField(decoration: InputDecoration(), controller: ),),
+            DropdownButton<String>(
+              value: dropdownValue,
+              icon: const Icon(Icons.music_note),
+              elevation: 16,
+              underline: Container(
+                height: 2,
+                color: Colors.deepPurpleAccent,
+              ),
+              onChanged: (String? value) {
+                setState(() {
+                  dropdownValue = value!;
+                });
+              },
+              items: list.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  child: Text(value),
+                  value: value,
+                );
+              }).toList(),
+            ),
             SizedBox(height: 16),
-            SizedBox(width: 150, child: TextField(decoration: InputDecoration(), controller: ),),
+            ElevatedButton(
+                onPressed: () {
+                  _pickFile(1);
+                },
+                child: Text('음악파일: ${_fileName}')),
             SizedBox(height: 16),
-            SizedBox(width: 150, child: TextField(decoration: InputDecoration(), controller: ),),
+            ElevatedButton(
+                onPressed: () {
+                  _pickFile(2);
+                },
+                child: Text('이미지파일: ${_imageFileName}')),
+            SizedBox(height: 16),
+            ElevatedButton(
+                onPressed: () {
+                  _uploadFile();
+                },
+                child: Text('Upload to Firebase Storage')),
+            SizedBox(height: 16),
+            _downloadUrl != null
+                ? Text('File uploaded successfully')
+                : Text('No file to display'),
+            SizedBox(height: 16),
+            _isUploading
+                ? const CircularProgressIndicator(strokeWidth: 10)
+                : Text('No file uploading'),
           ],
         ),
       ),
