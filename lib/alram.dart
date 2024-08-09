@@ -55,3 +55,26 @@ Future<Alarm?> loadAlarm() async {
   // 디코딩된 Map 데이터를 Alarm 객체로 변환하여 반환합니다.
   return Alarm.fromJson(jsonMap);
 }
+
+// 여러 알람을 SharedPreferences에서 불러오는 함수
+Future<List<Alarm>> getAlarms() async {
+  final prefs = await SharedPreferences.getInstance();
+  final List<String>? jsonStrings = prefs.getStringList('alarms');
+
+  if (jsonStrings == null) {
+    return [];
+  }
+
+  return jsonStrings.map((jsonString) {
+    final jsonMap = jsonDecode(jsonString);
+    return Alarm.fromJson(jsonMap);
+  }).toList();
+}
+
+// 여러 알람을 SharedPreferences에 저장하는 함수
+Future<void> saveAlarms(List<Alarm> alarms) async {
+  final prefs = await SharedPreferences.getInstance();
+  final jsonStrings =
+      alarms.map((alarm) => jsonEncode(alarm.toJson())).toList();
+  await prefs.setStringList('alarms', jsonStrings);
+}
