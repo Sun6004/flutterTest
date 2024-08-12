@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'set_alram.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 void main() {
   runApp(MyApp());
@@ -28,11 +30,15 @@ class DateCounterScreen extends StatefulWidget {
 class _DateCounterScreenState extends State<DateCounterScreen> {
   DateTime? _selectedDate; // 사용자가 선택한 날짜를 저장할 변수
   int? _daysPassed; // 선택한 날짜로부터 경과된 일 수를 저장할 변수
+  File? _imageFile;
+  String _text = '';
+  final _textController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadSavedDate(); // 앱 시작 시 저장된 날짜를 불러옵니다.
+    _loadData();
   }
 
   // SharedPreferences에서 저장된 날짜를 불러오는 메서드
@@ -46,6 +52,37 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
             DateTime.parse(savedDateString); // 문자열을 DateTime 객체로 변환하여 저장
         _calculateDaysPassed(); // 경과된 일 수를 계산
       });
+    }
+  }
+
+  Future<void> _loadData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _text = prefs.getString('userText') ?? '';
+      _textController.text = _text;
+      String? imagePath = prefs.getString('imagePath');
+      if (imagePath != null) {
+        _imageFile = File(imagePath);
+      }
+    });
+  }
+
+  Future<void> _saveData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('userText', _textController.text);
+    if (_imageFile != null) {
+      prefs.setString('imagePath', _imageFile!.path);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+      await _saveData();
     }
   }
 
@@ -107,7 +144,7 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
             Text(
               _daysPassed != null
                   ? 'Days Passed: $_daysPassed' // 경과된 일 수를 출력
-                  : '0.', // 선택된 날짜가 없으면 출력되는 기본 메시지
+                  : '0', // 선택된 날짜가 없으면 출력되는 기본 메시지
               style: TextStyle(fontSize: 20),
             ),
             SizedBox(height: 40),
@@ -115,6 +152,138 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
             ElevatedButton(
               onPressed: () => _selectDate(context), // 버튼 클릭 시 날짜 선택기 실행
               child: Text('Set Date'),
+            ),
+            SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      onTapDown: (_) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('이미지 및 텍스트 설정'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      _pickImage();
+                                    },
+                                    child: Text('이미지 선택'),
+                                  ),
+                                  SizedBox(height: 16),
+                                  TextField(
+                                    controller: _textController,
+                                    decoration:
+                                        InputDecoration(labelText: '이름 입력'),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _text = value;
+                                      });
+                                      _saveData();
+                                    },
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text('닫기'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      child: _imageFile != null
+                          ? Image.file(_imageFile!, width: 100, height: 100)
+                          : Placeholder(
+                              fallbackWidth: 100, fallbackHeight: 100),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      _saveData != null
+                          ? 'Entered Text: $_text' // 경과된 일 수를 출력
+                          : '0',
+                    ),
+                    ElevatedButton(
+                      onPressed: _pickImage,
+                      child: Text('Select Image'),
+                    ),
+                  ],
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      onTapDown: (_) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('이미지 및 텍스트 설정'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      _pickImage();
+                                    },
+                                    child: Text('이미지 선택'),
+                                  ),
+                                  SizedBox(height: 16),
+                                  TextField(
+                                    controller: _textController,
+                                    decoration:
+                                        InputDecoration(labelText: '이름 입력'),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _text = value;
+                                      });
+                                      _saveData();
+                                    },
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text('닫기'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      child: _imageFile != null
+                          ? Image.file(_imageFile!, width: 100, height: 100)
+                          : Placeholder(
+                              fallbackWidth: 100, fallbackHeight: 100),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      _saveData != null
+                          ? 'Entered Text: $_text' // 경과된 일 수를 출력
+                          : '0',
+                    ),
+                    ElevatedButton(
+                      onPressed: _pickImage,
+                      child: Text('Select Image'),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),

@@ -65,7 +65,7 @@ class SaveAlarmEx extends StatelessWidget {
                 );
 
                 // 알람 저장
-                await saveAlarm(newAlarm);
+                await saveAlarms([newAlarm]);
 
                 // 저장 완료 메시지 표시
                 ScaffoldMessenger.of(context).showSnackBar(

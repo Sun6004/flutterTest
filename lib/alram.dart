@@ -72,9 +72,22 @@ Future<List<Alarm>> getAlarms() async {
 }
 
 // 여러 알람을 SharedPreferences에 저장하는 함수
-Future<void> saveAlarms(List<Alarm> alarms) async {
+Future<void> saveAlarms(List<Alarm> newAlarms) async {
   final prefs = await SharedPreferences.getInstance();
+
+  // 기존 알람 데이터 불러오기
+  final List<String> existingJsonStrings = prefs.getStringList('alarms') ?? [];
+  final List<Alarm> existingAlarms = existingJsonStrings
+      .map((jsonString) => Alarm.fromJson(jsonDecode(jsonString)))
+      .toList();
+
+  // 새로운 알람 추가
+  existingAlarms.addAll(newAlarms);
+
+  // 모든 알람을 JSON 문자열로 변환
   final jsonStrings =
-      alarms.map((alarm) => jsonEncode(alarm.toJson())).toList();
+      existingAlarms.map((alarm) => jsonEncode(alarm.toJson())).toList();
+
+  // 업데이트된 알람 리스트 저장
   await prefs.setStringList('alarms', jsonStrings);
 }
