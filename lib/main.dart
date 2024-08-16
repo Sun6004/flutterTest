@@ -204,25 +204,26 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
                                     controller: _textController,
                                     decoration:
                                         InputDecoration(labelText: '이름 입력'),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _UserName1 = value;
-                                      });
-                                    },
+                                    // `onChanged` 콜백을 제거합니다.
                                   ),
                                 ],
                               ),
                               actions: [
                                 TextButton(
                                   onPressed: () {
-                                    _saveDataUser1(); // Call save function on button press
-                                    Navigator.pop(
-                                        context); // Optionally close the dialog after saving
+                                    setState(() {
+                                      _UserName1 = _textController
+                                          .text; // `TextField`의 값으로 `_UserName1`을 업데이트
+                                    });
+                                    _saveDataUser1(); // 저장 함수 호출
+                                    _textController.clear(); // `TextField`를 초기화
+                                    Navigator.pop(context); // 다이얼로그를 닫기
                                   },
-                                  child: Text('저장'), // Save button
+                                  child: Text('저장'), // 저장 버튼
                                 ),
                                 TextButton(
                                   onPressed: () {
+                                    _textController.clear();
                                     Navigator.pop(context);
                                   },
                                   child: Text('닫기'),
@@ -283,25 +284,26 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
                                     controller: _textController,
                                     decoration:
                                         InputDecoration(labelText: '이름 입력'),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _UserName2 = value;
-                                      });
-                                    },
+                                    // `onChanged` 콜백을 제거합니다.
                                   ),
                                 ],
                               ),
                               actions: [
                                 TextButton(
                                   onPressed: () {
-                                    _saveDataUser2(); // Call save function on button press
-                                    Navigator.pop(
-                                        context); // Optionally close the dialog after saving
+                                    setState(() {
+                                      _UserName2 = _textController
+                                          .text; // `TextField`의 값으로 `_UserName1`을 업데이트
+                                    });
+                                    _saveDataUser2(); // 저장 함수 호출
+                                    _textController.clear(); // `TextField`를 초기화
+                                    Navigator.pop(context); // 다이얼로그를 닫기
                                   },
-                                  child: Text('저장'), // Save button
+                                  child: Text('저장'), // 저장 버튼
                                 ),
                                 TextButton(
                                   onPressed: () {
+                                    _textController.clear();
                                     Navigator.pop(context);
                                   },
                                   child: Text('닫기'),
