@@ -31,7 +31,8 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
   DateTime? _selectedDate; // 사용자가 선택한 날짜를 저장할 변수
   int? _daysPassed; // 선택한 날짜로부터 경과된 일 수를 저장할 변수
   File? _imageFile;
-  String _text = '';
+  String _UserName1 = '';
+  String _UserName2 = '';
   final _textController = TextEditingController();
 
   @override
@@ -58,8 +59,10 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
   Future<void> _loadData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      _text = prefs.getString('userText') ?? '';
-      _textController.text = _text;
+      _UserName1 = prefs.getString('userName1') ?? '';
+      _textController.text = _UserName1;
+      _UserName2 = prefs.getString('userName2') ?? '';
+      _textController.text = _UserName2;
       String? imagePath = prefs.getString('imagePath');
       if (imagePath != null) {
         _imageFile = File(imagePath);
@@ -67,22 +70,41 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
     });
   }
 
-  Future<void> _saveData() async {
+  Future<void> _saveDataUser1() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('userText', _textController.text);
+    prefs.setString('userName1', _textController.text);
     if (_imageFile != null) {
       prefs.setString('imagePath', _imageFile!.path);
     }
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _saveDataUser2() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('userName2', _textController.text);
+    if (_imageFile != null) {
+      prefs.setString('imagePath', _imageFile!.path);
+    }
+  }
+
+  Future<void> _pickImage1() async {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
       });
-      await _saveData();
+      await _saveDataUser1();
+    }
+  }
+
+  Future<void> _pickImage2() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+      await _saveDataUser2();
     }
   }
 
@@ -173,7 +195,7 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
                                   ElevatedButton(
                                     onPressed: () {
                                       Navigator.pop(context);
-                                      _pickImage();
+                                      _pickImage1();
                                     },
                                     child: Text('이미지 선택'),
                                   ),
@@ -184,14 +206,21 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
                                         InputDecoration(labelText: '이름 입력'),
                                     onChanged: (value) {
                                       setState(() {
-                                        _text = value;
+                                        _UserName1 = value;
                                       });
-                                      _saveData();
                                     },
                                   ),
                                 ],
                               ),
                               actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    _saveDataUser1(); // Call save function on button press
+                                    Navigator.pop(
+                                        context); // Optionally close the dialog after saving
+                                  },
+                                  child: Text('저장'), // Save button
+                                ),
                                 TextButton(
                                   onPressed: () {
                                     Navigator.pop(context);
@@ -203,20 +232,29 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
                           },
                         );
                       },
-                      child: _imageFile != null
-                          ? Image.file(_imageFile!, width: 100, height: 100)
-                          : Placeholder(
-                              fallbackWidth: 100, fallbackHeight: 100),
+                      child: ClipOval(
+                        child: _imageFile != null
+                            ? Image.file(
+                                _imageFile!,
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              )
+                            : Container(
+                                width: 100,
+                                height: 100,
+                                color: Color.fromARGB(255, 180, 214, 255),
+                                child: Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Color.fromARGB(255, 58, 110, 250),
+                                ),
+                              ),
+                      ),
                     ),
                     SizedBox(height: 8),
                     Text(
-                      _saveData != null
-                          ? 'Entered Text: $_text' // 경과된 일 수를 출력
-                          : '0',
-                    ),
-                    ElevatedButton(
-                      onPressed: _pickImage,
-                      child: Text('Select Image'),
+                      _UserName1.isNotEmpty ? _UserName1 : '이름을 선택해주세요.',
                     ),
                   ],
                 ),
@@ -236,7 +274,7 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
                                   ElevatedButton(
                                     onPressed: () {
                                       Navigator.pop(context);
-                                      _pickImage();
+                                      _pickImage2();
                                     },
                                     child: Text('이미지 선택'),
                                   ),
@@ -247,14 +285,21 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
                                         InputDecoration(labelText: '이름 입력'),
                                     onChanged: (value) {
                                       setState(() {
-                                        _text = value;
+                                        _UserName2 = value;
                                       });
-                                      _saveData();
                                     },
                                   ),
                                 ],
                               ),
                               actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    _saveDataUser2(); // Call save function on button press
+                                    Navigator.pop(
+                                        context); // Optionally close the dialog after saving
+                                  },
+                                  child: Text('저장'), // Save button
+                                ),
                                 TextButton(
                                   onPressed: () {
                                     Navigator.pop(context);
@@ -266,20 +311,29 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
                           },
                         );
                       },
-                      child: _imageFile != null
-                          ? Image.file(_imageFile!, width: 100, height: 100)
-                          : Placeholder(
-                              fallbackWidth: 100, fallbackHeight: 100),
+                      child: ClipOval(
+                        child: _imageFile != null
+                            ? Image.file(
+                                _imageFile!,
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              )
+                            : Container(
+                                width: 100,
+                                height: 100,
+                                color: Color.fromARGB(255, 247, 212, 225),
+                                child: Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Color.fromARGB(255, 238, 79, 119),
+                                ),
+                              ),
+                      ),
                     ),
                     SizedBox(height: 8),
                     Text(
-                      _saveData != null
-                          ? 'Entered Text: $_text' // 경과된 일 수를 출력
-                          : '0',
-                    ),
-                    ElevatedButton(
-                      onPressed: _pickImage,
-                      child: Text('Select Image'),
+                      _UserName2.isNotEmpty ? _UserName2 : '이름을 선택해주세요.',
                     ),
                   ],
                 ),
