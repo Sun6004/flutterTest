@@ -4,6 +4,8 @@ import 'set_alram.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:path/path.dart' as path;
+import 'package:test_project/save_image.dart';
 
 void main() {
   runApp(MyApp());
@@ -30,7 +32,8 @@ class DateCounterScreen extends StatefulWidget {
 class _DateCounterScreenState extends State<DateCounterScreen> {
   DateTime? _selectedDate; // 사용자가 선택한 날짜를 저장할 변수
   int? _daysPassed; // 선택한 날짜로부터 경과된 일 수를 저장할 변수
-  File? _imageFile;
+  File? _imageFile1;
+  File? _imageFile2;
   String _UserName1 = '';
   String _UserName2 = '';
   final _textController = TextEditingController();
@@ -59,31 +62,49 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
   Future<void> _loadData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
+      // 사용자 1의 데이터를 로드
       _UserName1 = prefs.getString('userName1') ?? '';
-      _textController.text = _UserName1;
+      _textController.text = _UserName1; // 사용자 1의 텍스트 컨트롤러에 이름 설정
+      String? imagePath1 = prefs.getString('imagePath1');
+      if (imagePath1 != null) {
+        _imageFile1 = File(imagePath1); // 사용자 1의 이미지 파일 설정
+      }
+
+      // 사용자 2의 데이터를 로드
       _UserName2 = prefs.getString('userName2') ?? '';
-      _textController.text = _UserName2;
-      String? imagePath = prefs.getString('imagePath');
-      if (imagePath != null) {
-        _imageFile = File(imagePath);
+      _textController.text = _UserName2; // 사용자 2의 텍스트 컨트롤러에 이름 설정
+      String? imagePath2 = prefs.getString('imagePath2');
+      if (imagePath2 != null) {
+        _imageFile2 = File(imagePath2); // 사용자 2의 이미지 파일 설정
       }
     });
   }
 
-  Future<void> _saveDataUser1() async {
+  Future<void> _saveDataUser(String userNameKey, String imagePathKey,
+      TextEditingController controller, File? imageFile) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('userName1', _textController.text);
-    if (_imageFile != null) {
-      prefs.setString('imagePath', _imageFile!.path);
+    prefs.setString(userNameKey, controller.text); // 사용자의 이름을 저장
+    if (imageFile != null) {
+      prefs.setString(imagePathKey, imageFile.path); // 사용자의 이미지 경로를 저장
     }
   }
 
-  Future<void> _saveDataUser2() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('userName2', _textController.text);
-    if (_imageFile != null) {
-      prefs.setString('imagePath', _imageFile!.path);
+  Future<void> _saveDataUser1() async {
+    if (_imageFile1 != null) {
+      await saveImageToInternalStorage(
+          _imageFile1!, 'imagePath1'); // 사용자 1의 이미지를 내부 저장소에 저장
     }
+    await _saveDataUser('userName1', 'imagePath1', _textController,
+        _imageFile1); // 사용자 1의 데이터를 저장
+  }
+
+  Future<void> _saveDataUser2() async {
+    if (_imageFile2 != null) {
+      await saveImageToInternalStorage(
+          _imageFile2!, 'imagePath2'); // 사용자 2의 이미지를 내부 저장소에 저장
+    }
+    await _saveDataUser('userName2', 'imagePath2', _textController,
+        _imageFile2); // 사용자 2의 데이터를 저장
   }
 
   Future<void> _pickImage1() async {
@@ -91,7 +112,7 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
         await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _imageFile1 = File(pickedFile.path);
       });
       await _saveDataUser1();
     }
@@ -102,7 +123,7 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
         await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _imageFile2 = File(pickedFile.path);
       });
       await _saveDataUser2();
     }
@@ -133,7 +154,7 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
       final difference =
           now.difference(_selectedDate!).inDays; // 현재 날짜와 선택된 날짜의 차이를 일 단위로 계산
       setState(() {
-        _daysPassed = difference; // 경과된 일 수를 저장
+        _daysPassed = difference + 1; // 경과된 일 수를 저장(시작날짜 포함 +1)
       });
     }
   }
@@ -234,9 +255,9 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
                         );
                       },
                       child: ClipOval(
-                        child: _imageFile != null
+                        child: _imageFile1 != null
                             ? Image.file(
-                                _imageFile!,
+                                _imageFile1!,
                                 width: 100,
                                 height: 100,
                                 fit: BoxFit.cover,
@@ -314,9 +335,9 @@ class _DateCounterScreenState extends State<DateCounterScreen> {
                         );
                       },
                       child: ClipOval(
-                        child: _imageFile != null
+                        child: _imageFile2 != null
                             ? Image.file(
-                                _imageFile!,
+                                _imageFile2!,
                                 width: 100,
                                 height: 100,
                                 fit: BoxFit.cover,
