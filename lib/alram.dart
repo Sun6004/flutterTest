@@ -1,59 +1,136 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert'; // JSON 변환을 위한 패키지
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class Alarm {
-  DateTime dateTime; // 알람이 울릴 날짜와 시간
-  String memo; // 알람 메모
+  final int id;
+  final DateTime time;
+  final String memo;
+  bool isEnabled; // 알람 활성화 상태
 
-  // 생성자
-  Alarm({required this.dateTime, required this.memo});
+  Alarm({
+    required this.id,
+    required this.time,
+    required this.memo,
+    this.isEnabled = true, // 기본값은 true (켜짐 상태)
+  });
 
-  // Alarm 객체를 JSON 형식으로 변환
   Map<String, dynamic> toJson() => {
-        'dateTime': dateTime.toIso8601String(), // DateTime을 ISO 8601 문자열로 변환
-        'memo': memo, // 메모 문자열
+        'id': id,
+        'time': time.toIso8601String(),
+        'memo': memo,
+        'isEnabled': isEnabled,
       };
 
-  // JSON 형식의 데이터를 Alarm 객체로 변환
-  static Alarm fromJson(Map<String, dynamic> json) {
-    return Alarm(
-      dateTime:
-          DateTime.parse(json['dateTime']), // ISO 8601 문자열을 DateTime 객체로 변환
-      memo: json['memo'], // 메모 문자열
+  factory Alarm.fromJson(Map<String, dynamic> json) => Alarm(
+        id: json['id'],
+        time: DateTime.parse(json['time']),
+        memo: json['memo'],
+        isEnabled: json['isEnabled'] ?? true, // JSON에서 상태 불러오기
+      );
+}
+
+// 알림 플러그인 인스턴스 생성
+FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+// 알림 시스템 초기화 함수
+Future<void> initializeNotifications() async {
+  final AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher'); // 안드로이드용 초기화 설정
+  final DarwinInitializationSettings initializationSettingsIOS =
+      DarwinInitializationSettings(); // iOS용 초기화 설정
+  final InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS); // 전체 초기화 설정
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+}
+
+// DateTime을 TZDateTime으로 변환하는 함수
+tz.TZDateTime _convertToTZDateTime(DateTime dateTime) {
+  final location = tz.getLocation('Asia/Seoul'); // 한국 시간대
+  return tz.TZDateTime.from(dateTime, location);
+}
+
+// 알람 예약 함수
+Future<void> scheduleAlarm(Alarm alarm) async {
+  final AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'alarm_channel_id',
+    'Alarm Channel',
+    channelDescription: 'Channel for alarm notifications',
+    importance: Importance.max,
+    priority: Priority.high,
+    fullScreenIntent: true,
+  );
+
+  final DarwinNotificationDetails iOSPlatformChannelSpecifics =
+      DarwinNotificationDetails();
+
+  final NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics);
+
+  // DateTime을 TZDateTime으로 변환
+  tz.TZDateTime scheduledDate = _convertToTZDateTime(alarm.time);
+
+  // 알람 스케줄링
+  await flutterLocalNotificationsPlugin.zonedSchedule(
+    alarm.id,
+    '알람',
+    alarm.memo,
+    scheduledDate,
+    platformChannelSpecifics,
+    androidAllowWhileIdle: true,
+    uiLocalNotificationDateInterpretation:
+        UILocalNotificationDateInterpretation.absoluteTime,
+    matchDateTimeComponents: DateTimeComponents.time,
+  );
+}
+
+// 고유 ID를 생성하는 함수 (시간 기반)
+int generateUniqueId() {
+  return DateTime.now().millisecondsSinceEpoch.remainder(100000);
+  // 현재 시간을 밀리초 단위로 가져와서 나머지를 사용해 ID 생성 (0~99999 범위)
+}
+
+// SharedPreferences에서 저장된 알람을 로드하고, 각각의 알람을 스케줄링하는 함수
+Future<void> loadAndScheduleAlarms() async {
+  final prefs = await SharedPreferences.getInstance();
+  final List<String> jsonStrings =
+      prefs.getStringList('alarms') ?? []; // 저장된 알람 데이터 불러오기
+  final List<Alarm> alarms = jsonStrings
+      .map((jsonString) => Alarm.fromJson(jsonDecode(jsonString)))
+      .toList(); // JSON 문자열을 Alarm 객체 리스트로 변환
+
+  // 모든 알람에 대해 스케줄링
+  for (var alarm in alarms) {
+    await scheduleAlarm(alarm);
+  }
+}
+
+// 알람 스케줄링 함수
+Future<void> schedulingAlarm(Alarm alarm) async {
+  if (alarm.isEnabled) {
+    // 이미 활성화되어 있는 알람은 새로 스케줄링
+    tz.TZDateTime scheduledDate = _convertToTZDateTime(alarm.time);
+    final NotificationDetails platformChannelSpecifics =
+        _getPlatformChannelSpecifics();
+
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      alarm.id,
+      '알람',
+      alarm.memo,
+      scheduledDate,
+      platformChannelSpecifics,
+      androidAllowWhileIdle: true,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
     );
   }
-}
-
-// 알람을 SharedPreferences에 저장하는 함수
-Future<void> saveAlarm(Alarm alarm) async {
-  // SharedPreferences 인스턴스를 비동기로 가져옵니다.
-  final prefs = await SharedPreferences.getInstance();
-
-  // Alarm 객체를 JSON 문자열로 변환합니다.
-  final jsonAlarm = jsonEncode(alarm.toJson());
-
-  // JSON 문자열을 'alarm' 키에 저장합니다.
-  await prefs.setString('alarm', jsonAlarm);
-}
-
-// SharedPreferences에서 알람을 불러오는 함수
-Future<Alarm?> loadAlarm() async {
-  // SharedPreferences 인스턴스를 비동기로 가져옵니다.
-  final prefs = await SharedPreferences.getInstance();
-
-  // 'alarm' 키로 저장된 JSON 문자열을 가져옵니다.
-  final jsonString = prefs.getString('alarm');
-
-  // JSON 문자열이 없으면 null을 반환합니다.
-  if (jsonString == null) {
-    return null;
-  }
-
-  // JSON 문자열을 Map 형식으로 디코딩합니다.
-  final jsonMap = jsonDecode(jsonString);
-
-  // 디코딩된 Map 데이터를 Alarm 객체로 변환하여 반환합니다.
-  return Alarm.fromJson(jsonMap);
 }
 
 // 여러 알람을 SharedPreferences에서 불러오는 함수
@@ -90,4 +167,24 @@ Future<void> saveAlarms(List<Alarm> newAlarms) async {
 
   // 업데이트된 알람 리스트 저장
   await prefs.setStringList('alarms', jsonStrings);
+}
+
+// 플랫폼별 알림 세부 설정 함수 (재사용)
+NotificationDetails _getPlatformChannelSpecifics() {
+  final AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'alarm_channel_id',
+    'Alarm Channel',
+    channelDescription: 'Channel for alarm notifications',
+    importance: Importance.max,
+    priority: Priority.high,
+    fullScreenIntent: true,
+  );
+
+  final DarwinNotificationDetails iOSPlatformChannelSpecifics =
+      DarwinNotificationDetails();
+
+  return NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics);
 }

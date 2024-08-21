@@ -60,7 +60,8 @@ class SaveAlarmEx extends StatelessWidget {
 
                 // 새로운 Alarm 객체 생성
                 Alarm newAlarm = Alarm(
-                  dateTime: alarmTime,
+                  id: generateUniqueId(),
+                  time: alarmTime,
                   memo: memo,
                 );
 
