@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'memberList.dart';
+import 'elitememberList.dart';
 
 void main() {
   runApp(MyApp());
@@ -39,25 +40,23 @@ class MainScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             ElevatedButton(
-              child: Text('Member List'),
+              child: Text('일반조'),
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          MemberListPage()), // MemberListPage로 이동
+                  MaterialPageRoute(builder: (context) => MemberListPage()),
                 );
               },
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              child: Text('Match Members'),
-              onPressed: () {},
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              child: Text('Match Results'),
-              onPressed: () {},
+              child: Text('엘리트조'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => EliteMemberPage()),
+                );
+              },
             ),
           ],
         ),

@@ -78,7 +78,22 @@ class _MemberListScreenState extends State<MemberListPage> {
     });
   }
 
-  void _matchMembers() {
+  @override
+  void dispose() {
+    _saveMembers(); // 페이지가 닫힐 때 데이터 저장
+    super.dispose();
+  }
+
+  Future<Map<String, dynamic>> _loadMatchResult(String day) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? matchResultJson = prefs.getString('matchResult_$day');
+    if (matchResultJson != null) {
+      return json.decode(matchResultJson);
+    }
+    return {};
+  }
+
+  void _matchMembers(String day) {
     List<Member> presentMembers = _members.where((m) => m.isPresent).toList();
     presentMembers.shuffle(Random());
 
@@ -99,6 +114,7 @@ class _MemberListScreenState extends State<MemberListPage> {
       context,
       MaterialPageRoute(
         builder: (context) => MatchResultScreen(
+          day: day,
           groups: groups,
           remainingMembers: remainingMembers,
           absentMembers: absentMembers,
@@ -111,7 +127,7 @@ class _MemberListScreenState extends State<MemberListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Member List'),
+        title: Text('일반조 목록'),
       ),
       body: ListView.builder(
         itemCount: _members.length,
@@ -163,9 +179,15 @@ class _MemberListScreenState extends State<MemberListPage> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           FloatingActionButton(
-            onPressed: _matchMembers,
+            onPressed: () => _showMatchDialog(context),
             child: Icon(Icons.group),
             heroTag: 'match',
+          ),
+          SizedBox(height: 16),
+          FloatingActionButton(
+            onPressed: () => _showViewResultsDialog(context),
+            child: Icon(Icons.list),
+            heroTag: 'viewResults',
           ),
           SizedBox(height: 16),
           FloatingActionButton(
@@ -180,14 +202,104 @@ class _MemberListScreenState extends State<MemberListPage> {
     );
   }
 
+  void _showMatchDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('매칭 실행'),
+          content: Text('어느 요일의 매칭을 실행하시겠습니까?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('목요일'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _matchMembers('thursday');
+              },
+            ),
+            TextButton(
+              child: Text('토요일'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _matchMembers('saturday');
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showViewResultsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('매칭 결과 확인'),
+          content: Text('어느 요일의 매칭 결과를 확인하시겠습니까?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('목요일'),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                final matchResult = await _loadMatchResult('thursday');
+                _navigateToMatchResult(context, 'thursday', matchResult);
+              },
+            ),
+            TextButton(
+              child: Text('토요일'),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                final matchResult = await _loadMatchResult('saturday');
+                _navigateToMatchResult(context, 'saturday', matchResult);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _navigateToMatchResult(
+      BuildContext context, String day, Map<String, dynamic> matchResult) {
+    if (matchResult.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MatchResultScreen(
+            day: day,
+            groups: (matchResult['groups'] as List)
+                .map((group) => (group as List)
+                    .map((member) => Member.fromJson(member))
+                    .toList())
+                .toList(),
+            remainingMembers: (matchResult['remainingMembers'] as List)
+                .map((member) => Member.fromJson(member))
+                .toList(),
+            absentMembers: (matchResult['absentMembers'] as List)
+                .map((member) => Member.fromJson(member))
+                .toList(),
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$day 매칭 결과가 없습니다.')),
+      );
+    }
+  }
+
   void _showAddDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         String newMember = '';
+        TextEditingController controller = TextEditingController(text: "Hero_");
+
         return AlertDialog(
           title: Text('Add member'),
           content: TextField(
+            controller: controller,
             onChanged: (value) {
               newMember = value;
             },
@@ -253,11 +365,13 @@ class _MemberListScreenState extends State<MemberListPage> {
 }
 
 class MatchResultScreen extends StatefulWidget {
+  final String day;
   final List<List<Member>> groups;
   final List<Member> remainingMembers;
   final List<Member> absentMembers;
 
   MatchResultScreen({
+    required this.day,
     required this.groups,
     required this.remainingMembers,
     required this.absentMembers,
@@ -285,14 +399,15 @@ class _MatchResultScreenState extends State<MatchResultScreen> {
       'absentMembers':
           widget.absentMembers.map((member) => member.toJson()).toList(),
     };
-    await prefs.setString('matchResult', json.encode(matchResult));
+    await prefs.setString(
+        'matchResult_${widget.day}', json.encode(matchResult));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Match Result'),
+        title: Text('Match Result - ${widget.day.capitalize()}'),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -311,7 +426,7 @@ class _MatchResultScreenState extends State<MatchResultScreen> {
                 return Card(
                   margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: ListTile(
-                    title: Text('Group ${index + 1}'),
+                    title: Text('${index + 1} 조'),
                     subtitle: Text(
                         widget.groups[index].map((m) => m.name).join(', ')),
                   ),
@@ -321,7 +436,7 @@ class _MatchResultScreenState extends State<MatchResultScreen> {
             if (widget.remainingMembers.isNotEmpty) ...[
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text('Remaining Members:',
+                child: Text('팀 부족 인원:',
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
@@ -336,7 +451,7 @@ class _MatchResultScreenState extends State<MatchResultScreen> {
             if (widget.absentMembers.isNotEmpty) ...[
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text('Absent Members:',
+                child: Text('미참여 인원:',
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
@@ -352,5 +467,11 @@ class _MatchResultScreenState extends State<MatchResultScreen> {
         ),
       ),
     );
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${this.substring(1)}";
   }
 }
